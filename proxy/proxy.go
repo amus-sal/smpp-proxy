@@ -36,36 +36,41 @@ func (proxy *Proxy) RunProxy() {
 	go client.RunClient()
 	for {
 		select {
-		case serverPacket := <-serverRec:
-			if serverPacket.Header().ID == pdu.UnbindRespID {
+		case serverPacket, ok := <-serverRec:
+			if ok {
 				log.Println("[Proxy]  Get From Server", serverPacket.Header().ID)
-				clientSub <- serverPacket
-				close(serverSub)
-				close(clientSub)
-				close(clientRec)
-				close(serverRec)
+				select {
+				case clientSub <- serverPacket:
+				default:
+				}
 				log.Println("[Proxy]  Send to client")
-				break
-			} else {
-				clientSub <- serverPacket
-				log.Println("[Proxy]  Send to client")
+				if serverPacket.Header().ID == pdu.UnbindRespID {
+					close(serverSub)
+					close(clientSub)
+					close(clientRec)
+					close(serverRec)
+					break
+				}
 			}
-		case clientPack := <-clientRec:
-			log.Println("[Proxy]  Get From Client", clientPack.Header().ID)
-			if clientPack.Header().ID == pdu.UnbindRespID {
-				log.Println("[Proxy]  Send UNbind to Server")
-				serverSub <- clientPack
-				close(clientSub)
-				close(serverSub)
-				close(serverRec)
-				close(clientRec)
-				break
-			} else {
-				serverSub <- clientPack
+		case clientPack, ok := <-clientRec:
+			if ok {
+				log.Println("[Proxy]  Get From Client", clientPack.Header().ID)
+				select {
+				case serverSub <- clientPack:
+				default:
+				}
 				log.Println("[Proxy]  Send to Server")
+				if clientPack.Header().ID == pdu.UnbindRespID {
+					close(clientSub)
+					close(serverSub)
+					close(serverRec)
+					close(clientRec)
+					break
+				}
 			}
+
 		default:
-			log.Println("Idel process")
+			// log.Println("Idle process")
 		}
 	}
 

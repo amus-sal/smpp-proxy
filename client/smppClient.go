@@ -40,34 +40,30 @@ func (client *SmppClient) RunClient() {
 
 	for {
 
-		select {
-		case packet, ok := <-client.ClientRec:
-			log.Println("[Client] Get From Proxy")
-			if !ok {
-				log.Println("[Client] Get From Channel Close Proxy")
-				break
-			}
-
-			var b bytes.Buffer
-			packet.SerializeTo(&b)
-
-			writer := bufio.NewWriter(c)
-			io.Copy(writer, &b)
-			writer.Flush()
-			log.Println("[Client]  Send to Operator")
-
-		default:
-
-			reader := bufio.NewReader(c)
-			log.Println("[Client] Get From Operator")
-			resp, _ := pdu.Decode(reader)
-			if resp == nil {
-				// TODO add Handler if connection dowb to send to global channel to release proxy
-				break
-			}
-			client.ClientSub <- resp
-			log.Println("[Client] Send to proxy")
+		packet, ok := <-client.ClientRec
+		log.Println("[Client] Get From Proxy")
+		if !ok {
+			log.Println("[Client] Get From Channel Close Proxy")
+			break
 		}
+
+		var b bytes.Buffer
+		packet.SerializeTo(&b)
+
+		writer := bufio.NewWriter(c)
+		io.Copy(writer, &b)
+		writer.Flush()
+		log.Println("[Client]  Send to Operator")
+
+		reader := bufio.NewReader(c)
+		log.Println("[Client] Get From Operator")
+		resp, _ := pdu.Decode(reader)
+		if resp == nil {
+			// TODO add Handler if connection dowb to send to global channel to release proxy
+			break
+		}
+		client.ClientSub <- resp
+		log.Println("[Client] Send to proxy")
 	}
 
 }
