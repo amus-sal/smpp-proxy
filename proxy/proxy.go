@@ -6,8 +6,8 @@ import (
 	"../client"
 	"../connection"
 	"../server"
-
 	"github.com/fiorix/go-smpp/smpp/pdu"
+	"github.com/fiorix/go-smpp/smpp/pdu/pdufield"
 )
 
 //Proxy ...
@@ -39,10 +39,20 @@ func (proxy *Proxy) RunProxy() {
 		case serverPacket, ok := <-serverRec:
 			if ok {
 				log.Println("[Proxy]  Get From Server", serverPacket.Header().ID)
+				if serverPacket.Header().ID == pdu.SubmitSMID {
+					if serverPacket.Len() > 140 {
+						fields := serverPacket.Fields()
+						x := fields[pdufield.ShortMessage].String()
+						serverPacket.Fields().Set("short_message", nil)
+						serverPacket.TLVFields().Set(0x0424, x)
+					}
+
+				}
 				select {
 				case clientSub <- serverPacket:
 				default:
 				}
+
 				log.Println("[Proxy]  Send to client")
 				if serverPacket.Header().ID == pdu.UnbindRespID {
 					close(serverSub)
