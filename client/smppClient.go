@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 
 	"github.com/fiorix/go-smpp/smpp/pdu"
 )
@@ -30,7 +31,11 @@ func NewClient(ClientSub chan<- pdu.Body, ClientRec <-chan pdu.Body) *SmppClient
 //RunClient ...
 func (client *SmppClient) RunClient() {
 	log.Println("Start Client  initiation for SMPP Session")
-	c, err := net.Dial("tcp", "127.0.0.1:2010")
+	address := os.Getenv("SERVER_ADDRESS")
+	if address == "" {
+		log.Fatal("There ia a problem with Server Address")
+	}
+	c, err := net.Dial("tcp", address)
 	if err != nil {
 		fmt.Println(err)
 		// TODO add Handler if connection dowb to send to global channel to release proxy

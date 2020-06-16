@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
+	"os"
 
 	"./connection"
 	"./proxy"
@@ -12,7 +14,11 @@ import (
 // var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 
 func main() {
-	listner, err := net.Listen("tcp", "127.0.0.1:1234")
+	proxyServer := os.Getenv("PROXY_ADDRESS")
+	if proxyServer == "" {
+		log.Fatal("There is no defined proxy server from ENV")
+	}
+	listner, err := net.Listen("tcp", proxyServer)
 
 	if err != nil {
 		fmt.Println(err)
