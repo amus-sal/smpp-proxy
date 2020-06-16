@@ -3,7 +3,6 @@ package client
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -37,9 +36,8 @@ func (client *SmppClient) RunClient() {
 	}
 	c, err := net.Dial("tcp", address)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 		// TODO add Handler if connection dowb to send to global channel to release proxy
-		return
 	}
 	defer c.Close()
 
